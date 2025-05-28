@@ -13,6 +13,8 @@
 
 package frc.robot;
 
+import static frc.robot.subsystems.vision.VisionConstants.*;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -31,11 +33,8 @@ import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
-
-import static frc.robot.subsystems.vision.VisionConstants.*;
 import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
-
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -54,7 +53,8 @@ public class RobotContainer {
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
 
-  @SuppressWarnings("unused") //The vision subsystem is only used within swerve, so it is unused here.
+  @SuppressWarnings(
+      "unused") // The vision subsystem is only used within swerve, so it is unused here.
   private final Vision vision;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -70,10 +70,10 @@ public class RobotContainer {
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
         vision =
-             new Vision(
-                 drive::addVisionMeasurement,
-                 new VisionIOPhotonVision(camera0Name, robotToCamera0),
-                 new VisionIOPhotonVision(camera1Name, robotToCamera1));
+            new Vision(
+                drive::addVisionMeasurement,
+                new VisionIOPhotonVision(camera0Name, robotToCamera0),
+                new VisionIOPhotonVision(camera1Name, robotToCamera1));
         break;
 
       case SIM:
