@@ -13,12 +13,20 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.KilogramSquareMeters;
+import static edu.wpi.first.units.Units.Volts;
+
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Voltage;
+import org.ironmaple.simulation.drivesims.COTS;
+import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
+import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
 
 public class DriveConstants {
   public static final double maxSpeedMetersPerSec = Units.feetToMeters(16);
@@ -111,4 +119,25 @@ public class DriveConstants {
               driveMotorCurrentLimit,
               1),
           moduleTranslations);
+
+  public static DriveTrainSimulationConfig mapleSimConfig =
+      DriveTrainSimulationConfig.Default()
+          // Specify gyro type (for realistic gyro drifting and error simulation)
+          .withGyro(COTS.ofPigeon2())
+          // Specify swerve module (for realistic swerve dynamics)
+          .withSwerveModule(
+              new SwerveModuleSimulationConfig(
+                  DCMotor.getKrakenX60(1), // Drive motor is a Kraken X60
+                  DCMotor.getFalcon500(1), // Steer motor is a Falcon 500
+                  6.12, // Drive motor gear ratio.
+                  12.8, // Steer motor gear ratio.
+                  Voltage.ofBaseUnits(0.1, Volts), // Drive friction voltage.
+                  Voltage.ofBaseUnits(0.1, Volts), // Steer friction voltage
+                  Inches.of(2), // Wheel radius
+                  KilogramSquareMeters.of(0.03), // Steer MOI
+                  1.2)) // Wheel COF
+          // Configures the track length and track width (spacing between swerve modules)
+          .withTrackLengthTrackWidth(Inches.of(24), Inches.of(24))
+          // Configures the bumper size (dimensions of the robot bumper)
+          .withBumperSize(Inches.of(30), Inches.of(30));
 }

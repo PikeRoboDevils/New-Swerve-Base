@@ -15,6 +15,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import org.ironmaple.simulation.SimulatedArena;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -61,6 +62,8 @@ public class Robot extends LoggedRobot {
         break;
 
       case SIM:
+        // Obtains the default instance of the simulation world, which is a Crescendo Arena.
+        SimulatedArena.getInstance();
         // Running a physics simulator, log to NT
         Logger.addDataReceiver(new NT4Publisher());
         break;
@@ -155,9 +158,28 @@ public class Robot extends LoggedRobot {
 
   /** This function is called once when the robot is first started up. */
   @Override
-  public void simulationInit() {}
+  public void simulationInit() {
+    // Set the robot period to 1/100 second and configure 3 sub-ticks per period
+    // This simulates a 100Hz robot with 300Hz odometry.
+    // A Kit already handles it
+    // SimulatedArena.overrideSimulationTimings(Time.ofBaseUnits(defaultPeriodSecs,Seconds), 3);
+
+    // Reset field
+    SimulatedArena.getInstance().resetFieldForAuto();
+
+    // // Clear all game pieces from the field
+    // SimulatedArena.getInstance().clearGamePieces();
+  }
 
   /** This function is called periodically whilst in simulation. */
+  // simulation period method in your Robot.java
   @Override
-  public void simulationPeriodic() {}
+  public void simulationPeriodic() {
+    SimulatedArena.getInstance().simulationPeriodic();
+    // Publish to telemetry using AdvantageKit
+    Logger.recordOutput(
+        "FieldSimulation/Algae", SimulatedArena.getInstance().getGamePiecesArrayByType("Algae"));
+    Logger.recordOutput(
+        "FieldSimulation/Coral", SimulatedArena.getInstance().getGamePiecesArrayByType("Coral"));
+  }
 }
