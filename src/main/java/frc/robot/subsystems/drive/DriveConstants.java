@@ -78,7 +78,7 @@ public class DriveConstants {
   public static final double driveKd = 0.0;
   public static final double driveKs = 0.0;
   public static final double driveKv = 0.16;
-  public static final double driveSimP = 0.05;
+  public static final double driveSimP = 1.05;
   public static final double driveSimD = 0.0;
   public static final double driveSimKs = 0.0;
   public static final double driveSimKv = 0.0789;
@@ -91,8 +91,11 @@ public class DriveConstants {
 
   // Turn encoder configuration
   public static final boolean turnEncoderInverted = true;
-  public static final double turnEncoderPositionFactor = 2 * Math.PI; // Rotations -> Radians
-  public static final double turnEncoderVelocityFactor = (2 * Math.PI) / 60.0; // RPM -> Rad/Sec
+  // need to stay as a ratio
+  public static final double turnEncoderPositionFactor =
+      2 * Math.PI / turnMotorReduction; // Rotations -> Radians
+  public static final double turnEncoderVelocityFactor =
+      (2 * Math.PI) / 60.0 / turnMotorReduction; // RPM -> Rad/Sec
 
   // Turn PID configuration
   public static final double turnKp = 2;
@@ -127,10 +130,10 @@ public class DriveConstants {
           // Specify swerve module (for realistic swerve dynamics)
           .withSwerveModule(
               new SwerveModuleSimulationConfig(
-                  DCMotor.getKrakenX60(1), // Drive motor is a Kraken X60
-                  DCMotor.getFalcon500(1), // Steer motor is a Falcon 500
-                  6.12, // Drive motor gear ratio.
-                  12.8, // Steer motor gear ratio.
+                  DCMotor.getNEO(1), // Drive motor is a NEO
+                  DCMotor.getNEO(1), // Steer motor is a NEO
+                  driveMotorReduction, // Drive motor gear ratio.
+                  turnMotorReduction, // Steer motor gear ratio.
                   Voltage.ofBaseUnits(0.1, Volts), // Drive friction voltage.
                   Voltage.ofBaseUnits(0.1, Volts), // Steer friction voltage
                   Inches.of(2), // Wheel radius
