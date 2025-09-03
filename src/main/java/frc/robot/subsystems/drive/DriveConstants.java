@@ -19,7 +19,6 @@ import static edu.wpi.first.units.Units.Volts;
 
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -64,7 +63,7 @@ public class DriveConstants {
   public static final int backRightTurnCanId = 9;
 
   // Drive motor configuration
-  public static final int driveMotorCurrentLimit = 50;
+  public static final int driveMotorCurrentLimit = 40;
   public static final double wheelRadiusMeters = Units.inchesToMeters(2);
   public static final double driveMotorReduction = 6.75; // SDS Mk4i L2
   public static final DCMotor driveGearbox = DCMotor.getNEO(1);
@@ -97,7 +96,7 @@ public class DriveConstants {
   public static final double turnEncoderVelocityFactor = (2 * Math.PI) / 60.0; // RPM -> Rad/Sec
 
   // Turn PID configuration
-  public static final double turnKp = 0.01;
+  public static final double turnKp = 0.8;
   public static final double turnKd = 0;
   public static final double turnSimP = 0.01;
   public static final double turnSimD = 0.0;
@@ -142,5 +141,5 @@ public class DriveConstants {
           .withTrackLengthTrackWidth(Inches.of(24), Inches.of(24))
           // Configures the bumper size (dimensions of the robot bumper)
           .withBumperSize(Inches.of(30), Inches.of(30));
-public static Pose2d startingPose = new Pose2d(3,3,new Rotation2d());
+  public static Pose2d startingPose = new Pose2d(3, 3, new Rotation2d());
 }
