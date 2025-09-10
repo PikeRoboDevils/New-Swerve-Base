@@ -68,11 +68,13 @@ public class DriveConstants {
   public static final double driveMotorReduction = 6.75; // SDS Mk4i L2
   public static final DCMotor driveGearbox = DCMotor.getNEO(1);
 
-  // Drive encoder configuration
+  // Drive encoder configration
   public static final double driveEncoderPositionFactor =
-      2 * Math.PI; // Rotor Rotations -> Wheel Radians
+      // rot -> Rad -> wheel rad; * 2pi / gear ratio
+      (2 * Math.PI) / 6.75; // Rotor Rotations -> Wheel Radians
   public static final double driveEncoderVelocityFactor =
-      (2 * Math.PI) / 60.0; // Rotor RPM -> Wheel Rad/Sec
+      // rot -> Rad -> wheel rad; * 2pi / gear ratio
+      (2 * Math.PI) / 6.75; // Rotor RPM -> Wheel Rad/Sec
 
   // Drive PID configuration
   public static final double driveKp = 0.0;

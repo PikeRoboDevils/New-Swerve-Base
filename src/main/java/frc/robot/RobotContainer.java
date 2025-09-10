@@ -134,6 +134,14 @@ public class RobotContainer {
     autoChooser.addOption(
         "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
+    // logging autos
+    // autoChooser.addDefaultOption("DEFAULT",
+    // AutoBuilder.buildAuto(Constants.PathPlanner.DEFAULT));
+    String[] autos = AutoBuilder.getAllAutoNames().toArray(new String[0]);
+    for (int i = 0; i < autos.length; i++) {
+      autoChooser.addOption(autos[i], AutoBuilder.buildAuto(autos[i]));
+    }
+
     // Configure the button bindings
     configureButtonBindings();
   }
