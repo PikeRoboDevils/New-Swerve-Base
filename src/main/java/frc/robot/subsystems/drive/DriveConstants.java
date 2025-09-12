@@ -15,15 +15,20 @@ package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.path.PathConstraints;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
@@ -70,11 +75,11 @@ public class DriveConstants {
 
   // Drive encoder configration
   public static final double driveEncoderPositionFactor =
-      // rot -> Rad -> wheel rad; * 2pi / gear ratio
+      // rot -> Rad -> wheel rad; 2pi / gear ratio
       (2 * Math.PI) / 6.75; // Rotor Rotations -> Wheel Radians
   public static final double driveEncoderVelocityFactor =
-      // rot -> Rad -> wheel rad; * 2pi / gear ratio
-      (2 * Math.PI) / 6.75; // Rotor RPM -> Wheel Rad/Sec
+      // rot -> Rad -> wheel rad; 2pi / gear ratio / seconds
+      (2 * Math.PI) / 6.75 / 60.0; // Rotor RPM -> Wheel Rad/Sec
 
   // Drive PID configuration
   public static final double driveKp = 0.0;
@@ -94,8 +99,8 @@ public class DriveConstants {
 
   // Turn encoder configuration
   public static final boolean turnEncoderInverted = true;
-  public static final double turnEncoderPositionFactor = 2 * Math.PI; // Rotations -> Radians
-  public static final double turnEncoderVelocityFactor = (2 * Math.PI) / 60.0; // RPM -> Rad/Sec
+  public static final double turnEncoderPositionFactor = 2 * Math.PI/turnMotorReduction; // Rotations -> WHEEL Radians
+  public static final double turnEncoderVelocityFactor = (2 * Math.PI) / 60.0/turnMotorReduction; // RPM -> WHEEL Rad/Sec
 
   // Turn PID configuration
   public static final double turnKp = 0.8;
@@ -122,6 +127,28 @@ public class DriveConstants {
               driveMotorCurrentLimit,
               1),
           moduleTranslations);
+    
+          // Path On The Fly Constraints
+    public static PathConstraints kTeleopPathConstraints =
+        new PathConstraints(
+            Units.feetToMeters(15/4), 4.3/4, Units.degreesToRadians(540/4), Units.degreesToRadians(720/4));
+            // All divided by four in case
+
+    public static PathConstraints kAutoPathConstraints =
+        new PathConstraints(
+            Units.feetToMeters(6), 1.0, Units.degreesToRadians(540), Units.degreesToRadians(540));
+
+    // AUTO Align
+    public static Time kEndTriggerDebounce = Time.ofBaseUnits(1, Seconds);
+
+    public static Time kTeleopAlignAdjustTimeout = Time.ofBaseUnits(10, Seconds);
+    public static Time kAutoAlignAdjustTimeout = Time.ofBaseUnits(3, Seconds);
+
+    public static Distance kPositionTolerance = Distance.ofBaseUnits(1, Inches);
+    public static Distance kSpeedTolerance = Distance.ofBaseUnits(1, Inches);
+
+    public static Rotation2d kRotationTolerance = Rotation2d.fromDegrees(1);
+
 
   public static DriveTrainSimulationConfig mapleSimConfig =
       DriveTrainSimulationConfig.Default()
