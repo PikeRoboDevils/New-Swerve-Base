@@ -16,6 +16,8 @@ package frc.robot;
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
@@ -25,6 +27,23 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.ElevatorWrist;
+import frc.robot.subsystems.CoralIntake.CoralIntake;
+import frc.robot.subsystems.CoralIntake.CoralIntakeHardware;
+import frc.robot.subsystems.CoralIntake.CoralIntakeIO;
+import frc.robot.subsystems.CoralIntake.CoralIntakeSim;
+import frc.robot.subsystems.Elevator.Elevator;
+import frc.robot.subsystems.Elevator.ElevatorHardware;
+import frc.robot.subsystems.Elevator.ElevatorIO;
+import frc.robot.subsystems.Elevator.ElevatorSim;
+import frc.robot.subsystems.Wrist.Wrist;
+import frc.robot.subsystems.Wrist.WristHardware;
+import frc.robot.subsystems.Wrist.WristIO;
+import frc.robot.subsystems.Wrist.WristSim;
+import frc.robot.subsystems.climber.Climber;
+import frc.robot.subsystems.climber.ClimberHardware;
+import frc.robot.subsystems.climber.ClimberIO;
+import frc.robot.subsystems.climber.ClimberSim;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.drive.GyroIO;
@@ -51,8 +70,8 @@ public class RobotContainer {
   private final Drive drive;
 
   // Controller
-  private final CommandXboxController controller = new CommandXboxController(0);
-
+  private final CommandXboxController driverXbox = new CommandXboxController(0);
+  private final CommandXboxController operatorXbox = new CommandXboxController(1);
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
 
@@ -61,6 +80,14 @@ public class RobotContainer {
   private final Vision vision;
 
   private SwerveDriveSimulation driveSimulation;
+
+  
+  private ElevatorWrist EWHandler;
+
+  public Wrist wrist;
+  public Elevator elevator;
+  private Climber climb;
+  private CoralIntake intake;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -77,6 +104,12 @@ public class RobotContainer {
         vision = new Vision(drive::addVisionMeasurement); // no cameras for now
         // new VisionIOPhotonVision(camera0Name, robotToCamera0),
         // new VisionIOPhotonVision(camera1Name, robotToCamera1));
+
+        elevator = new Elevator(new ElevatorHardware());
+        wrist = new Wrist(new WristHardware(), elevator); // Locations depend on each other
+        climb = new Climber(new ClimberHardware());
+        intake = new CoralIntake(new CoralIntakeHardware());
+
         break;
 
       case SIM:
@@ -100,6 +133,11 @@ public class RobotContainer {
                 drive::addVisionMeasurement,
                 new VisionIOPhotonVisionSim(camera0Name, robotToCamera0, drive::getPose),
                 new VisionIOPhotonVisionSim(camera1Name, robotToCamera1, drive::getPose));
+
+
+                elevator = new Elevator(new ElevatorSim());
+                wrist = new Wrist(new WristSim(), elevator);
+                climb = new Climber(new ClimberSim());
         break;
 
       default:
@@ -112,8 +150,22 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {});
         vision = new Vision(drive::addVisionMeasurement, new VisionIO() {}, new VisionIO() {});
+
+        elevator = new Elevator(new ElevatorIO() {});
+        wrist = new Wrist(new WristIO() {}, elevator);
+        climb = new Climber(new ClimberIO() {});
+        intake = new CoralIntake(new CoralIntakeIO() {});
         break;
+
     }
+
+              // handles all Elevator and Wrist movement
+              EWHandler =
+              new ElevatorWrist(
+                  elevator,
+                  wrist,
+                  () -> operatorXbox.getLeftY(), // Shim
+                  () -> operatorXbox.getRightY());
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -157,25 +209,25 @@ public class RobotContainer {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(),
-            () -> controller.getRightX()));
+            () -> -driverXbox.getLeftY(),
+            () -> -driverXbox.getLeftX(),
+            () -> driverXbox.getRightX()));
 
     // Lock to 0° when A button is held
-    controller
+    driverXbox
         .a()
         .whileTrue(
             DriveCommands.joystickDriveAtAngle(
                 drive,
-                () -> -controller.getLeftY(),
-                () -> -controller.getLeftX(),
+                () -> -driverXbox.getLeftY(),
+                () -> -driverXbox.getLeftX(),
                 () -> new Rotation2d()));
 
     // Switch to X pattern when X button is pressed
-    controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+    driverXbox.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
 
     // Reset gyro to 0° when B button is pressed
-    controller
+    driverXbox
         .b()
         .onTrue(
             Commands.runOnce(
@@ -184,6 +236,51 @@ public class RobotContainer {
                             new Pose2d(drive.getPose().getTranslation(), new Rotation2d())),
                     drive)
                 .ignoringDisable(true));
+
+
+                
+    // Season Specififc
+    driverXbox
+        .rightTrigger()
+        .whileTrue(intake.setVoltage(() -> 3))
+        .toggleOnFalse(intake.setVoltage(() -> 1.25)); // In
+
+    driverXbox.leftTrigger().whileTrue(intake.setVoltage(() -> -3)); // Out
+
+
+    // Overides
+    operatorXbox.leftStick().whileTrue(elevator.setVoltage(() -> -operatorXbox.getLeftY() * 3));
+    wrist.setDefaultCommand(wrist.setVoltage(() -> 0.02));
+    operatorXbox.rightStick().whileTrue(wrist.setVoltage(() -> operatorXbox.getRightY() * 2));
+
+    // Climber
+    operatorXbox
+        .rightTrigger(0.5)
+        .whileTrue(
+            climb.setVoltage(
+                () -> 0.5 - operatorXbox.getRightY() * 8)) // quick climb 0.5 is holding voltage
+        .whileFalse(climb.setVoltage(() -> 0)); // POSITIVE IS DOWN
+
+    // Elevator & Wrist
+    operatorXbox.start().onTrue(Commands.runOnce(() -> elevator.reset(), elevator)); // manual zero
+
+    NamedCommands.registerCommand("STOW", EWHandler.stow(1));
+    operatorXbox.a().onTrue(EWHandler.stow());
+
+    NamedCommands.registerCommand("SOURCE", EWHandler.coralSource(1));
+    operatorXbox.rightBumper().onTrue(EWHandler.coralSource());
+
+    NamedCommands.registerCommand("L2", EWHandler.coralL2(1));
+    operatorXbox.b().onTrue(EWHandler.coralL2());
+    // operatorXbox.b().and(operatorXbox.povUp()).whileTrue(EWHandler.algaeL2());
+
+    NamedCommands.registerCommand("L3", EWHandler.coralL3(1));
+    operatorXbox.x().onTrue(EWHandler.coralL3());
+    // operatorXbox.x().and(operatorXbox.povUp()).whileTrue(EWHandler.algaeL3());
+
+    NamedCommands.registerCommand("L4", EWHandler.coralL4(1));
+    operatorXbox.y().onTrue(EWHandler.coralL4());
+
   }
 
   /**
